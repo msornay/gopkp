@@ -24,6 +24,7 @@ func generatePriv() (*ecdsa.PrivateKey, error) {
 	return priv, nil
 }
 
+
 func certTemplate(name string) (*x509.Certificate, error) {
 	notBefore := time.Now()
 	notAfter := notBefore.Add(365 * 24 * time.Hour)
