@@ -29,10 +29,10 @@ BX2Uhw==
 -----END CERTIFICATE-----
 `
 
-func TestCertificatePin(t *testing.T) {
+func TestSPKIFingerprint(t *testing.T) {
 	pemBlock, _ := pem.Decode([]byte(pemCert))
 	cert, _ := x509.ParseCertificate(pemBlock.Bytes)
-	pin := CertificatePin(cert)
+	pin := SPKIFingerprint(cert)
 
 	// Pin computed with openssl :
 	//   openssl x509 -noout -in cert.pem -pubkey | \
