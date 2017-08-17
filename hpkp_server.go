@@ -17,25 +17,28 @@ type hpkp struct {
 // HTTP responses. It can be used with any framework supporting http.Handler
 // (net/http, gorilla..)
 //
+// A non-nil pin configures Public-Key-Pins headers, a non-nil pinRO configure
+// Public-Key-Pins-Report-Only
+//
 // Example:
-//    mux := http.NewServeMux()
-//    mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-//    	w.Write([]byte("I'm just a happy litle server\n"))
-//    })
-//	  hpkp, _ := HPKP(
-//	  	  &Pin{
-//	  		  MaxAge: 60 * 24 * 3600,
-//	  		  Fingerprints: []string{
-//	  		  	"Fo67lPV7KHjuFUIYTo79OkNnD+xL/2id9MJBtjz4goo=",
-//	  		  },
-//	  	  },
-//	  	  nil,
-//	  )
-//	  handler := hpkp(testHandler())
-//    err := http.ListenAndServeTLS(":8081", "cert.pem", "key.pem", handler)
-//    if err != nil {
-//    	log.Fatal(err)
-//    }
+//   mux := http.NewServeMux()
+//   mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+//   	w.Write([]byte("I'm just a happy litle server\n"))
+//   })
+//   hpkp, _ := HPKP(
+//   	&Pin{
+//   		MaxAge: 60 * 24 * 3600,
+//   		Fingerprints: []string{
+//   			"Fo67lPV7KHjuFUIYTo79OkNnD+xL/2id9MJBtjz4goo=",
+//   		},
+//   	},
+//   	nil,
+//   )
+//   handler := hpkp(testHandler())
+//   err := http.ListenAndServeTLS(":8081", "cert.pem", "key.pem", handler)
+//   if err != nil {
+//       log.Fatal(err)
+//   }
 func HPKP(pin, pinRO *Pin) (func(next http.Handler) http.Handler, error) {
 	var pins []PinHeader
 	if pin != nil {
