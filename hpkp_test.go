@@ -3,6 +3,7 @@ package gopkp
 import (
 	"crypto/x509"
 	"encoding/pem"
+	"strings"
 	"testing"
 )
 
@@ -41,4 +42,68 @@ func TestSPKIFingerprint(t *testing.T) {
 	if pin != `pin-sha256="Fo67lPV7KHjuFUIYTo79OkNnD+xL/2id9MJBtjz4goo="` {
 		t.Error("Invalid pin: " + pin)
 	}
+}
+
+func TestFormatHeader(t *testing.T) {
+	tests := []struct {
+		pin                *Pin
+		expectedName       string
+		expectedDirectives []string
+	}{
+		{
+			pin:          &Pin{ReportOnly: false},
+			expectedName: "Public-Key-Pins",
+		}, {
+			pin:          &Pin{ReportOnly: true},
+			expectedName: "Public-Key-Pins-Report-Only",
+		}, {
+			pin:                &Pin{MaxAge: 2592000},
+			expectedDirectives: []string{"max-age=2592000"},
+		}, {
+			pin:                &Pin{ReportURI: "https://acme.org/pkp-report"},
+			expectedDirectives: []string{`report-uri="https://acme.org/pkp-report"`},
+		}, {
+			pin:                &Pin{IncludeSubDomains: true},
+			expectedDirectives: []string{"includeSubDomains"},
+		}, {
+			pin:                &Pin{Fingerprints: []string{"Fo67lPV7KHjuFUIYTo79OkNnD+xL/2id9MJBtjz4goo="}},
+			expectedDirectives: []string{`pin-sha256="Fo67lPV7KHjuFUIYTo79OkNnD+xL/2id9MJBtjz4goo="`},
+		}, {
+			pin: &Pin{
+				ReportOnly:        false,
+				MaxAge:            2592000,
+				ReportURI:         "https://acme.org/pkp-report",
+				IncludeSubDomains: true,
+				Fingerprints: []string{
+					"Fo67lPV7KHjuFUIYTo79OkNnD+xL/2id9MJBtjz4goo=",
+					"dzRWTVwHfvhJ2caIeEtXi6TE2ZZKWLI8gUksgADUcZs=",
+				},
+			},
+			expectedName: "Public-Key-Pins",
+			expectedDirectives: []string{
+				"max-age=2592000",
+				`report-uri="https://acme.org/pkp-report"`,
+				"includeSubDomains",
+				`pin-sha256="Fo67lPV7KHjuFUIYTo79OkNnD+xL/2id9MJBtjz4goo="`,
+				`pin-sha256="dzRWTVwHfvhJ2caIeEtXi6TE2ZZKWLI8gUksgADUcZs="`,
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		h := tc.pin.FormatHeader()
+		if tc.expectedName != "" && h.Name != tc.expectedName {
+			t.Errorf("Invalid header field name got %s expected %s", h.Name, tc.expectedName)
+		}
+		directives := make(map[string]bool) // Set of directives
+		for _, d := range strings.Split(h.Value, ";") {
+			directives[d] = true
+		}
+		for _, ed := range tc.expectedDirectives {
+			if _, ok := directives[ed]; !ok {
+				t.Errorf("Expected directive %s is missing", ed)
+			}
+		}
+	}
+
 }
