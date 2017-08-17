@@ -15,19 +15,28 @@ func testHandler() http.Handler {
 func TestPKPHeader(t *testing.T) {
 
 	tests := []struct {
-		url               string
-		expectedPKPHeader string
+		url          string
+		expectHeader bool
 	}{
 		{ // non-secure transport
-			url:               "http://acme.org",
-			expectedPKPHeader: "",
+			url:          "http://acme.org",
+			expectHeader: false,
 		}, {
-			url:               "https://acme.org",
-			expectedPKPHeader: "hpkp",
+			url:          "https://acme.org",
+			expectHeader: true,
 		},
 	}
 
-	handler := HPKP()(testHandler())
+	h, _ := HPKP(
+		&Pin{
+			MaxAge: 60 * 24 * 3600,
+			Fingerprints: []string{
+				"Fo67lPV7KHjuFUIYTo79OkNnD+xL/2id9MJBtjz4goo=",
+			},
+		},
+		nil,
+	)
+	handler := h(testHandler())
 
 	for _, tc := range tests {
 		req := httptest.NewRequest("GET", tc.url, nil)
@@ -35,9 +44,14 @@ func TestPKPHeader(t *testing.T) {
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
 
-		pkpHeader := resp.Header.Get("hpkp")
-		if pkpHeader != tc.expectedPKPHeader {
-			t.Errorf("Invalid PKP header got %s expected %s", pkpHeader, tc.expectedPKPHeader)
+		hdr := resp.Header.Get("Public-Key-Pins")
+		if !tc.expectHeader && hdr != "" {
+			t.Errorf("Unexpected HPKP header")
+			continue
+		}
+		if tc.expectHeader && hdr == "" {
+			t.Errorf("Missing HPKP header")
+			continue
 		}
 	}
 }
