@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
+	"net/http"
 	"strings"
 )
 
@@ -55,6 +56,28 @@ func (pin *Pin) FormatHeader() PinHeader {
 	h.Value = strings.Join(directives, ";")
 
 	return h
+}
+
+func parseHeaderValue(s string) Pin {
+	// XXX https://github.com/golang/gddo/blob/master/httputil/header/header.go#L135
+	return Pin{}
+}
+
+// Parse the public key pin and the public key pin for report only contained in a http header
+// Both, one or neither can be nil depending on what is set in the header.
+func ParseHeader(h http.Header) (*Pin, *Pin) {
+	var pin, pinRO Pin
+	pinValue := h.Get("Public-Key-Pins")
+	if pinValue != "" {
+		pin = parseHeaderValue(pinValue)
+		pin.ReportOnly = false
+	}
+	pinROValue := h.Get("Public-Key-Pins-Report-Only")
+	if pinROValue != "" {
+		pinRO = parseHeaderValue(pinROValue)
+		pin.ReportOnly = true
+	}
+	return &pin, &pinRO
 }
 
 // Compute the Subject Public Key Info fingerprint used in Public-Key-Pins* HTTP headers for HPKP
