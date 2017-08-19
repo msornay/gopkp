@@ -1,7 +1,6 @@
 package gopkp
 
 import (
-	"log"
 	"net/http"
 )
 
@@ -14,6 +13,5 @@ func (tr *HPKPTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	// follow the RFC which recommends to perform pin validation "as soon as
 	// possible"
 	resp, err := tr.Transport.RoundTrip(r)
-	log.Printf("%+v\n", resp.TLS)
 	return resp, err
 }
